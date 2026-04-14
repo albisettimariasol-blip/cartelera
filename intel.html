@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cartelera ISFD 19</title>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #0f172a; 
+            color: #f8fafc;
+        }
+        .bg-app {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .dia-activo { 
+            background: #38bdf8; 
+            color: #0f172a !important; 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(56, 189, 248, 0.4);
+        }
+        .card-clase {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            transition: all 0.2s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .anim-fade { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+</head>
+<body>
+    <div class="bg-app"></div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // ✅ LINK CORREGIDO A FORMATO CSV
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vReaVS6mnh4C46hwJQp65r_RFHgZsQaWnsJyH7w8pJGdYHcn_R84Wz3hRorPXgBwT7g6-U5ld3S1DF_/pub?output=csv";
+
+        function App() {
+            const [datos, setDatos] = useState([]);
+            const [diaActual, setDiaActual] = useState("");
+            const [busqueda, setBusqueda] = useState("");
+            const [cargando, setCargando] = useState(true);
+            const [error, setError] = useState(false);
+
+            useEffect(() => {
+                const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+                const hoy = dias[new Date().getDay()];
+                setDiaActual(hoy === "Domingo" ? "Lunes" : hoy);
+                fetchData();
+            }, []);
+
+            const fetchData = () => {
+                setCargando(true);
+                Papa.parse(SHEET_CSV_URL, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        console.log("Datos:", results.data);
+                        // Limpieza básica de datos
+                        const cleaned = results.data.filter(r => r.Materia || r.Aula);
+                        setDatos(cleaned);
+                        setCargando(false);
+                    },
+                    error: () => {
+                        setError(true);
+                        setCargando(false);
+                    }
+                });
+            };
+
+            const filtrados = useMemo(() => {
+                return datos.filter(h => {
+                    // Normalizamos para que no importe si hay tildes o mayúsculas en el Excel
+                    const d = (h.Día || h.dia || h.DIA || "").toString().toLowerCase().trim();
+                    const m = (h.Materia || h.materia || "").toString().toLowerCase();
+                    const c = (h.Carrera || h.carrera || "").toString().toLowerCase();
+                    const current = diaActual.toLowerCase().trim();
+                    
+                    const matchDia = d === current;
+                    const matchBusqueda = m.includes(busqueda.toLowerCase()) || c.includes(busqueda.toLowerCase());
+                    
+                    return matchDia && matchBusqueda;
+                });
+            }, [datos, diaActual, busqueda]);
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen px-4 pt-8 pb-20">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h1 className="text-3xl font-black text-white italic tracking-tighter">ISFD 19</h1>
+                            <p className="text-[10px] font-bold text-sky-500 uppercase tracking-widest mt-1">Cartelera en Tiempo Real</p>
+                        </div>
+                        <button onClick={fetchData} className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-sky-400">
+                            <i className={`fa-solid fa-sync-alt ${cargando ? 'animate-spin' : ''}`}></i>
+                        </button>
+                    </div>
+
+                    {/* Buscador */}
+                    <div className="relative mb-6">
+                        <i className="fa-solid fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input 
+                            type="text"
+                            placeholder="Buscar materia o carrera..."
+                            className="w-full h-14 pl-12 pr-4 bg-slate-800/50 border border-slate-700 rounded-2xl outline-none focus:border-sky-500 text-white"
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Días */}
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar mb-8 pb-2">
+                        {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"].map(d => (
+                            <button 
+                                key={d}
+                                onClick={() => setDiaActual(d)}
+                                className={`px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shrink-0 ${diaActual === d ? 'dia-activo' : 'bg-slate-800/30 text-slate-500 border border-slate-700/50'}`}
+                            >
+                                {d}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Lista */}
+                    <div className="space-y-4">
+                        {cargando ? (
+                            <div className="text-center py-20">
+                                <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sincronizando...</p>
+                            </div>
+                        ) : filtrados.length > 0 ? (
+                            filtrados.map((h, i) => (
+                                <div key={i} className="card-clase p-5 rounded-[1.8rem] flex justify-between items-center anim-fade" style={{animationDelay: `${i*0.05}s`}}>
+                                    <div className="flex-1 pr-4">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[8px] font-black bg-sky-500/10 text-sky-400 px-2 py-0.5 rounded uppercase">
+                                                {h.Carrera || h.carrera || 'ISFD 19'}
+                                            </span>
+                                            <span className="text-[9px] font-bold text-slate-500 uppercase">
+                                                <i className="fa-regular fa-clock mr-1"></i>{h.Horario || h.horario || '--:--'}
+                                            </span>
+                                        </div>
+                                        <h3 className="text-lg font-extrabold text-white uppercase leading-tight tracking-tight">
+                                            {h.Materia || h.materia}
+                                        </h3>
+                                    </div>
+                                    <div className="flex flex-col items-center justify-center min-w-[65px] h-[65px] rounded-2xl bg-sky-500 text-slate-950">
+                                        <span className="text-[8px] font-black uppercase opacity-60 mb-0.5">AULA</span>
+                                        <span className="text-2xl font-black leading-none">{h.Aula || h.aula}</span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="py-20 text-center opacity-30">
+                                <i className="fa-solid fa-calendar-xmark text-5xl mb-4"></i>
+                                <p className="text-xs font-black uppercase tracking-widest">No hay datos para hoy</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
