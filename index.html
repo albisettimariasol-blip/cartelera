@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cartelera ISFD 19</title>
+    <title>Centro de Estudiantes ISFD 19 - Cartelera</title>
     
-    <!-- Scripts -->
+    <!-- Librerías Externas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -14,174 +14,244 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #0f172a; 
+            background-color: #030712; 
             color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
         }
-        .bg-app {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1;
-            background: radial-gradient(circle at top right, #1e293b, #0f172a);
-        }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .dia-activo { 
-            background: #38bdf8; 
-            color: #0f172a !important; 
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -5px rgba(56, 189, 248, 0.4);
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .card-student {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: transform 0.2s ease;
         }
-        .card-clase {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(51, 65, 85, 0.5);
-            transition: all 0.2s;
+
+        .card-student:active {
+            transform: scale(0.97);
+            border-color: #3b82f6;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        .shimmer {
+            background: linear-gradient(90deg, #030712 25%, #111827 50%, #030712 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
         }
-        .anim-fade { animation: fadeIn 0.4s ease-out forwards; }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .ig-gradient {
+            background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+        }
     </style>
 </head>
 <body>
-    <div class="bg-app"></div>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // ✅ LINK CORREGIDO A FORMATO CSV
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vReaVS6mnh4C46hwJQp65r_RFHgZsQaWnsJyH7w8pJGdYHcn_R84Wz3hRorPXgBwT7g6-U5ld3S1DF_/pub?output=csv";
+        // ==========================================
+        // CONFIGURACIÓN DE REDES Y GOOGLE SHEETS
+        // ==========================================
+        const INSTAGRAM_USER = "centroestudiantes_19"; // Reemplaza con tu usuario real
+        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS_REEMPLAZA_ESTO_CON_TU_ID/pub?output=csv";
 
         function App() {
-            const [datos, setDatos] = useState([]);
-            const [diaActual, setDiaActual] = useState("");
-            const [busqueda, setBusqueda] = useState("");
-            const [cargando, setCargando] = useState(true);
-            const [error, setError] = useState(false);
+            const [rows, setRows] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [lastUpdate, setLastUpdate] = useState(null);
+            const [filtroDia, setFiltroDia] = useState("");
+
+            const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
             useEffect(() => {
                 const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
                 const hoy = dias[new Date().getDay()];
-                setDiaActual(hoy === "Domingo" ? "Lunes" : hoy);
+                setFiltroDia(hoy === "Domingo" ? "Lunes" : hoy);
                 fetchData();
             }, []);
 
             const fetchData = () => {
-                setCargando(true);
-                Papa.parse(SHEET_CSV_URL, {
+                setLoading(true);
+                setError(null);
+                const cacheBuster = `&t=${new Date().getTime()}`;
+                
+                Papa.parse(GOOGLE_SHEET_CSV_URL + cacheBuster, {
                     download: true,
                     header: true,
                     skipEmptyLines: true,
                     complete: (results) => {
-                        console.log("Datos:", results.data);
-                        // Limpieza básica de datos
-                        const cleaned = results.data.filter(r => r.Materia || r.Aula);
-                        setDatos(cleaned);
-                        setCargando(false);
+                        if (results.data && results.data.length > 0) {
+                            setRows(results.data);
+                            setLastUpdate(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                        } else {
+                            setError("Aún no hay datos cargados.");
+                        }
+                        setLoading(false);
                     },
-                    error: () => {
-                        setError(true);
-                        setCargando(false);
+                    error: (err) => {
+                        setError("Error de conexión.");
+                        setLoading(false);
                     }
                 });
             };
 
-            const filtrados = useMemo(() => {
-                return datos.filter(h => {
-                    // Normalizamos para que no importe si hay tildes o mayúsculas en el Excel
-                    const d = (h.Día || h.dia || h.DIA || "").toString().toLowerCase().trim();
-                    const m = (h.Materia || h.materia || "").toString().toLowerCase();
-                    const c = (h.Carrera || h.carrera || "").toString().toLowerCase();
-                    const current = diaActual.toLowerCase().trim();
-                    
-                    const matchDia = d === current;
-                    const matchBusqueda = m.includes(busqueda.toLowerCase()) || c.includes(busqueda.toLowerCase());
-                    
-                    return matchDia && matchBusqueda;
+            const filteredData = useMemo(() => {
+                return rows.filter(r => {
+                    const diaRow = (r.Día || r.dia || r.DIA || "").trim().toLowerCase();
+                    return diaRow === filtroDia.toLowerCase();
                 });
-            }, [datos, diaActual, busqueda]);
+            }, [rows, filtroDia]);
 
             return (
-                <div className="max-w-md mx-auto min-h-screen px-4 pt-8 pb-20">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h1 className="text-3xl font-black text-white italic tracking-tighter">ISFD 19</h1>
-                            <p className="text-[10px] font-bold text-sky-500 uppercase tracking-widest mt-1">Cartelera en Tiempo Real</p>
-                        </div>
-                        <button onClick={fetchData} className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-sky-400">
-                            <i className={`fa-solid fa-sync-alt ${cargando ? 'animate-spin' : ''}`}></i>
-                        </button>
-                    </div>
-
-                    {/* Buscador */}
-                    <div className="relative mb-6">
-                        <i className="fa-solid fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input 
-                            type="text"
-                            placeholder="Buscar materia o carrera..."
-                            className="w-full h-14 pl-12 pr-4 bg-slate-800/50 border border-slate-700 rounded-2xl outline-none focus:border-sky-500 text-white"
-                            value={busqueda}
-                            onChange={(e) => setBusqueda(e.target.value)}
-                        />
-                    </div>
-
-                    {/* Días */}
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar mb-8 pb-2">
-                        {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"].map(d => (
-                            <button 
-                                key={d}
-                                onClick={() => setDiaActual(d)}
-                                className={`px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shrink-0 ${diaActual === d ? 'dia-activo' : 'bg-slate-800/30 text-slate-500 border border-slate-700/50'}`}
-                            >
-                                {d}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Lista */}
-                    <div className="space-y-4">
-                        {cargando ? (
-                            <div className="text-center py-20">
-                                <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sincronizando...</p>
-                            </div>
-                        ) : filtrados.length > 0 ? (
-                            filtrados.map((h, i) => (
-                                <div key={i} className="card-clase p-5 rounded-[1.8rem] flex justify-between items-center anim-fade" style={{animationDelay: `${i*0.05}s`}}>
-                                    <div className="flex-1 pr-4">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[8px] font-black bg-sky-500/10 text-sky-400 px-2 py-0.5 rounded uppercase">
-                                                {h.Carrera || h.carrera || 'ISFD 19'}
-                                            </span>
-                                            <span className="text-[9px] font-bold text-slate-500 uppercase">
-                                                <i className="fa-regular fa-clock mr-1"></i>{h.Horario || h.horario || '--:--'}
-                                            </span>
-                                        </div>
-                                        <h3 className="text-lg font-extrabold text-white uppercase leading-tight tracking-tight">
-                                            {h.Materia || h.materia}
-                                        </h3>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center min-w-[65px] h-[65px] rounded-2xl bg-sky-500 text-slate-950">
-                                        <span className="text-[8px] font-black uppercase opacity-60 mb-0.5">AULA</span>
-                                        <span className="text-2xl font-black leading-none">{h.Aula || h.aula}</span>
-                                    </div>
+                <div className="min-h-screen pb-20 flex flex-col">
+                    {/* Header Centro de Estudiantes */}
+                    <header className="p-6 pt-10 sticky top-0 z-10 bg-[#030712]/90 backdrop-blur-xl border-b border-blue-900/20">
+                        <div className="max-w-xl mx-auto flex justify-between items-center">
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-blue-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                    </span>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-400">Cartelera Virtual</span>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="py-20 text-center opacity-30">
-                                <i className="fa-solid fa-calendar-xmark text-5xl mb-4"></i>
-                                <p className="text-xs font-black uppercase tracking-widest">No hay datos para hoy</p>
+                                <h1 className="text-2xl font-black tracking-tight text-white leading-tight">
+                                    CENTRO DE <span className="gradient-text">ESTUDIANTES</span>
+                                </h1>
+                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">
+                                    ISFD 19 • Unidad Estudiantil
+                                </p>
                             </div>
-                        )}
-                    </div>
+                            <div className="flex gap-2">
+                                <a 
+                                    href={`https://instagram.com/${INSTAGRAM_USER}`}
+                                    target="_blank"
+                                    className="w-10 h-10 rounded-xl ig-gradient flex items-center justify-center text-white active:scale-90 transition-all shadow-lg"
+                                >
+                                    <i className="fa-brands fa-instagram text-lg"></i>
+                                </a>
+                                <button 
+                                    onClick={fetchData}
+                                    className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-700 active:scale-90 transition-all"
+                                >
+                                    <i className={`fa-solid fa-sync text-slate-300 text-xs ${loading ? 'animate-spin' : ''}`}></i>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-xl mx-auto px-6 mt-6 flex-grow w-full">
+                        {/* Selector de Días */}
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-8 py-2">
+                            {diasSemana.map(d => (
+                                <button
+                                    key={d}
+                                    onClick={() => setFiltroDia(d)}
+                                    className={`px-5 py-3 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all shrink-0 border-2 ${
+                                        filtroDia === d 
+                                        ? 'bg-blue-600 border-blue-400 text-white shadow-lg shadow-blue-600/20' 
+                                        : 'bg-slate-900/50 border-transparent text-slate-500 hover:border-slate-800'
+                                    }`}
+                                >
+                                    {d}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Listado Principal */}
+                        <div className="grid gap-4">
+                            {loading && rows.length === 0 ? (
+                                [1, 2, 3].map(i => (
+                                    <div key={i} className="h-28 rounded-[2rem] shimmer opacity-30"></div>
+                                ))
+                            ) : filteredData.length > 0 ? (
+                                filteredData.map((item, i) => (
+                                    <div key={i} className="card-student p-5 rounded-[2rem] flex justify-between items-center">
+                                        <div className="flex-1 pr-4">
+                                            <span className="text-blue-400 text-[9px] font-black uppercase tracking-widest block mb-1">
+                                                {(item.Carrera || "Carrera")}
+                                            </span>
+                                            <h3 className="text-[16px] font-extrabold text-white uppercase leading-tight mb-2">
+                                                {item.Materia || "Materia"}
+                                            </h3>
+                                            <div className="flex items-center gap-2 text-slate-400">
+                                                <i className="fa-regular fa-clock text-[10px]"></i>
+                                                <span className="text-[10px] font-bold">{item.Horario || "Horario"}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex flex-col items-center justify-center min-w-[70px] h-[70px] bg-slate-800/80 rounded-2xl border border-slate-700">
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter mb-0.5">Aula</span>
+                                            <span className="text-2xl font-black text-blue-400 tracking-tighter leading-none">{item.Aula || "-"}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="py-16 text-center">
+                                    <div className="text-slate-700 mb-4">
+                                        <i className="fa-solid fa-ghost text-5xl"></i>
+                                    </div>
+                                    <h2 className="text-slate-500 font-black text-[11px] uppercase tracking-widest">Nada cargado para el {filtroDia}</h2>
+                                    <p className="text-slate-600 text-[10px] mt-2 px-10">Si ves que falta información, envíanos un mensaje por Instagram.</p>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    {/* Footer Redes Centro Estudiantes */}
+                    <footer className="mt-10 px-6 pb-12 w-full max-w-xl mx-auto">
+                        <div className="bg-blue-600/10 border border-blue-500/20 rounded-[2.5rem] p-8 text-center">
+                            <h4 className="text-white font-black text-sm uppercase tracking-widest mb-2">¿Dudas o Reclamos?</h4>
+                            <p className="text-slate-400 text-[11px] mb-6 leading-relaxed">
+                                Somos el Centro de Estudiantes del 19. Escribinos si tenés problemas con las aulas o necesitás ayuda.
+                            </p>
+                            <div className="flex flex-col gap-3">
+                                <a 
+                                    href={`https://instagram.com/${INSTAGRAM_USER}`}
+                                    target="_blank"
+                                    className="flex items-center justify-center gap-3 bg-white text-black font-black text-[11px] uppercase tracking-widest py-4 rounded-2xl active:scale-95 transition-all shadow-xl"
+                                >
+                                    <i className="fa-brands fa-instagram text-lg"></i>
+                                    Seguinos en Instagram
+                                </a>
+                                <div className="flex justify-center gap-4 mt-2">
+                                    <span className="text-slate-600 text-[9px] font-bold uppercase tracking-widest">ISFD 19</span>
+                                    <span className="text-slate-600 text-[9px]">•</span>
+                                    <span className="text-slate-600 text-[9px] font-bold uppercase tracking-widest">Mar del Plata</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p className="text-center text-slate-700 text-[9px] font-black uppercase tracking-[0.3em] mt-8">
+                            Construyendo el 19 que queremos
+                        </p>
+                    </footer>
                 </div>
             );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
         root.render(<App />);
     </script>
 </body>
