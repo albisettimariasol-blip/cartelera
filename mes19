@@ -1,0 +1,147 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+import { 
+  Instagram, 
+  MapPin, 
+  ExternalLink, 
+  Navigation,
+  Loader2,
+  Info
+} from 'lucide-react';
+
+// --- CONFIGURACIÓN DE FIREBASE ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'mes-19-redes';
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [data, setData] = useState({ 
+    instagram: 'mes19_', // Nombre de usuario corregido para Mes 19
+    direccion: 'Almafuerte 565, Mar del Plata' 
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInAnonymously(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.error("Error de autenticación:", err);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Escuchamos posibles cambios en la base de datos
+    const redesRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'redes');
+    const unsubscribe = onSnapshot(redesRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const remoteData = snapshot.data();
+        setData(prev => ({
+          instagram: remoteData.instagram || prev.instagram,
+          direccion: remoteData.direccion || prev.direccion
+        }));
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Error cargando datos:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const openInstagram = () => {
+    const handle = data.instagram.replace('@', '');
+    window.open(`https://www.instagram.com/${handle}/`, '_blank');
+  };
+
+  const openMaps = () => {
+    const query = encodeURIComponent(data.direccion);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
+        
+        {/* Encabezado Mes 19 */}
+        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 text-center text-white">
+          <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full mx-auto flex items-center justify-center mb-4 border border-white/30">
+            <span className="text-2xl font-black italic">M19</span>
+          </div>
+          <h1 className="text-xl font-bold tracking-tight">Mes 19</h1>
+          <p className="text-indigo-200 text-xs mt-1 uppercase font-semibold tracking-widest">Punto de Encuentro</p>
+        </div>
+
+        {/* Botones de Acción */}
+        <div className="p-6 space-y-4">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+            </div>
+          ) : (
+            <>
+              {/* Botón Instagram Mes 19 */}
+              <button 
+                onClick={openInstagram}
+                className="w-full group relative flex items-center p-1 bg-gradient-to-r from-purple-500 via-red-500 to-yellow-500 rounded-2xl hover:opacity-90 transition-all active:scale-95 overflow-hidden"
+              >
+                <div className="flex items-center w-full bg-white m-[2px] rounded-[14px] p-4 gap-4">
+                  <div className="w-10 h-10 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 rounded-xl flex items-center justify-center text-white">
+                    <Instagram size={24} />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Seguinos en Instagram</p>
+                    <p className="text-slate-800 font-bold tracking-tight">@{data.instagram}</p>
+                  </div>
+                  <ExternalLink className="text-slate-300 group-hover:text-indigo-500 transition-colors" size={18} />
+                </div>
+              </button>
+
+              {/* Botón Dirección */}
+              <button 
+                onClick={openMaps}
+                className="w-full group flex items-center p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:bg-indigo-50 hover:border-indigo-200 transition-all active:scale-95 gap-4"
+              >
+                <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
+                  <MapPin size={24} />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">¿Dónde estamos?</p>
+                  <p className="text-slate-800 font-bold text-sm">{data.direccion}</p>
+                </div>
+                <Navigation className="text-slate-300 group-hover:text-indigo-500 transition-colors" size={18} />
+              </button>
+
+              <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100 flex gap-3">
+                <Info className="text-blue-500 shrink-0" size={18} />
+                <p className="text-[11px] text-blue-700 font-medium italic">
+                  "El 19 no es solo un número, es nuestro lugar."
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="bg-slate-50 p-4 border-t border-slate-100 text-center">
+          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">Comunidad ISFD 19</p>
+        </div>
+      </div>
+    </div>
+  );
+}
