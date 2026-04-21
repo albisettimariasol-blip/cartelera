@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MES | Black Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+        
+        :root {
+            --bg: #000000;
+            --card-bg: #111111;
+            --card-border: #222222;
+            --accent: #ffffff;
+            --secondary: #888888;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: #ffffff;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .glass-card:active {
+            transform: scale(0.97);
+            border-color: #444;
+        }
+
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        .active-nav {
+            color: var(--accent) !important;
+        }
+        
+        .active-nav i {
+            transform: translateY(-2px);
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        input::placeholder {
+            color: #555;
+        }
+
+        .day-tab.active {
+            background: white;
+            color: black;
+        }
+    </style>
+</head>
+<body class="pb-28">
+
+    <!-- Header -->
+    <header class="pt-12 px-6 pb-6 flex justify-between items-center bg-black sticky top-0 z-50">
+        <div>
+            <h2 class="text-2xl font-black tracking-tighter uppercase">M.E.S.</h2>
+            <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                <p class="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">Terminal Estudiantil v2.0</p>
+            </div>
+        </div>
+        <div class="w-10 h-10 rounded-full border border-zinc-800 flex items-center justify-center bg-zinc-900">
+            <i class="fas fa-user text-xs text-zinc-400"></i>
+        </div>
+    </header>
+
+    <main class="px-5 max-w-lg mx-auto">
+        
+        <!-- HOME -->
+        <div id="view-home" class="tab-content active space-y-8">
+            <!-- Hero Card -->
+            <div class="glass-card p-6 border-zinc-800 bg-zinc-900/50">
+                <h3 class="text-xl font-bold mb-2">Bienvenido a la red</h3>
+                <p class="text-sm text-zinc-500 mb-6 font-medium leading-relaxed">Consulta horarios, aulas y novedades del ISFD 19 en tiempo real.</p>
+                <div class="flex gap-2">
+                    <button onclick="showTab('cartelera')" class="bg-white text-black text-[11px] font-black px-5 py-2.5 rounded-full uppercase">Ver Cartelera</button>
+                    <button onclick="showTab('info')" class="bg-transparent text-white text-[11px] font-black px-5 py-2.5 rounded-full border border-zinc-700 uppercase">Nosotros</button>
+                </div>
+            </div>
+
+            <!-- Social Media -->
+            <div class="space-y-4">
+                <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Redes Oficiales</h4>
+                <div class="grid grid-cols-1 gap-3">
+                    <a href="https://www.instagram.com/mes_isfd19/" target="_blank" class="glass-card p-4 flex items-center justify-between group hover:bg-zinc-900">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800">
+                                <i class="fab fa-instagram text-lg"></i>
+                            </div>
+                            <span class="text-sm font-bold tracking-tight">@mes_isfd19</span>
+                        </div>
+                        <i class="fas fa-arrow-right text-zinc-700 group-hover:text-white transition-colors"></i>
+                    </a>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="#" class="glass-card p-4 flex flex-col gap-3">
+                            <i class="fab fa-whatsapp text-xl text-zinc-400"></i>
+                            <span class="text-xs font-bold uppercase tracking-tighter">WhatsApp</span>
+                        </a>
+                        <a href="#" class="glass-card p-4 flex flex-col gap-3">
+                            <i class="fab fa-tiktok text-xl text-zinc-400"></i>
+                            <span class="text-xs font-bold uppercase tracking-tighter">TikTok</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News -->
+            <div class="space-y-4">
+                <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Estado del Edificio</h4>
+                <div class="p-4 rounded-2xl bg-zinc-900/30 border border-dashed border-zinc-800 flex items-center gap-4">
+                    <i class="fas fa-check-circle text-zinc-500"></i>
+                    <p class="text-[11px] font-medium text-zinc-400">Clases dictándose con normalidad en ambas sedes.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEARCH / AULAS -->
+        <div id="view-cartelera" class="tab-content space-y-4">
+            <div class="sticky top-[88px] bg-black pt-2 pb-4 z-40">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="BUSCAR POR MATERIA O CARRERA..." 
+                        class="w-full bg-zinc-900 border border-zinc-800 p-4 pl-6 rounded-2xl text-[11px] font-black tracking-widest focus:outline-none focus:border-zinc-500 transition-all uppercase">
+                </div>
+            </div>
+            
+            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                <button onclick="setDia('Lunes')" class="day-tab px-5 py-2 rounded-full text-[10px] font-black uppercase transition-all bg-white text-black active">Lun</button>
+                <button onclick="setDia('Martes')" class="day-tab px-5 py-2 rounded-full text-[10px] font-black uppercase transition-all glass-card text-zinc-500 border-zinc-800">Mar</button>
+                <button onclick="setDia('Miércoles')" class="day-tab px-5 py-2 rounded-full text-[10px] font-black uppercase transition-all glass-card text-zinc-500 border-zinc-800">Mie</button>
+                <button onclick="setDia('Jueves')" class="day-tab px-5 py-2 rounded-full text-[10px] font-black uppercase transition-all glass-card text-zinc-500 border-zinc-800">Jue</button>
+                <button onclick="setDia('Viernes')" class="day-tab px-5 py-2 rounded-full text-[10px] font-black uppercase transition-all glass-card text-zinc-500 border-zinc-800">Vie</button>
+            </div>
+
+            <div id="aulaList" class="space-y-3 pb-10">
+                <!-- Data Dynamically Injected -->
+            </div>
+        </div>
+
+        <!-- ABOUT -->
+        <div id="view-info" class="tab-content space-y-6">
+            <div class="glass-card p-8 border-zinc-800 text-center space-y-6">
+                <div class="inline-flex p-4 bg-zinc-900 rounded-3xl border border-zinc-800 mb-2">
+                    <i class="fas fa-hand-fist text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-black tracking-tighter">UNIÓN ESTUDIANTIL</h2>
+                <p class="text-sm text-zinc-500 font-medium leading-loose">
+                    El Movimiento Estudiantil (MES) es la herramienta de transformación colectiva del ISFD 19. 
+                    Autogestionado, democrático y siempre presente para defender tu derecho a estudiar.
+                </p>
+                <div class="pt-4 border-t border-zinc-800">
+                    <p class="text-[9px] text-zinc-600 font-black uppercase tracking-[0.3em]">Gestión 2024 / 2025</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navbar -->
+    <nav class="fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-xl border-t border-zinc-900 p-4 z-50 flex justify-around items-center">
+        <button onclick="showTab('home')" class="nav-btn flex flex-col items-center gap-1.5 text-zinc-600 transition-all" id="nav-home">
+            <i class="fas fa-home-alt text-lg"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest">Inicio</span>
+        </button>
+        <button onclick="showTab('cartelera')" class="nav-btn flex flex-col items-center gap-1.5 text-zinc-600 transition-all" id="nav-cartelera">
+            <i class="fas fa-search text-lg"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest">Aulas</span>
+        </button>
+        <button onclick="showTab('info')" class="nav-btn flex flex-col items-center gap-1.5 text-zinc-600 transition-all" id="nav-info">
+            <i class="fas fa-info-circle text-lg"></i>
+            <span class="text-[8px] font-black uppercase tracking-widest">MES</span>
+        </button>
+    </nav>
+
+    <script>
+        const datos = [
+            { mat: "PERSPECTIVA PEDAGÓGICA", car: "Ed. Primaria", aul: "12", hor: "18:00", dia: "Lunes" },
+            { mat: "PSICOLOGÍA DEL DESARROLLO", car: "Psicología", aul: "04", hor: "18:20", dia: "Lunes" },
+            { mat: "DIDÁCTICA DE CIENCIAS SOCIALES", car: "Ed. Primaria", aul: "08", hor: "19:00", dia: "Martes" },
+            { mat: "HISTORIA SOCIAL ARG.", car: "Historia", aul: "SUM", hor: "18:00", dia: "Miércoles" },
+            { mat: "TALLER DE LECTURA Y ESCRITURA", car: "Ed. Primaria", aul: "02", hor: "20:00", dia: "Jueves" },
+            { mat: "ED. FÍSICA Y SU DIDÁCTICA", car: "Ed. Primaria", aul: "PATIO", hor: "18:00", dia: "Viernes" }
+        ];
+
+        let currentDia = "Lunes";
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + tab).classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
+            document.getElementById('nav-' + tab).classList.add('active-nav');
+
+            if(tab === 'cartelera') renderAulas();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function setDia(dia) {
+            currentDia = dia;
+            document.querySelectorAll('.day-tab').forEach(t => {
+                const matches = t.innerText.toLowerCase().startsWith(dia.substring(0,2).toLowerCase());
+                if(matches) {
+                    t.classList.add('bg-white', 'text-black', 'active');
+                    t.classList.remove('glass-card', 'text-zinc-500', 'border-zinc-800');
+                } else {
+                    t.classList.remove('bg-white', 'text-black', 'active');
+                    t.classList.add('glass-card', 'text-zinc-500', 'border-zinc-800');
+                }
+            });
+            renderAulas();
+        }
+
+        function renderAulas() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const list = document.getElementById('aulaList');
+            const filtrados = datos.filter(d => 
+                d.dia === currentDia && 
+                (d.mat.toLowerCase().includes(query) || d.car.toLowerCase().includes(query))
+            );
+
+            list.innerHTML = filtrados.length ? filtrados.map(d => `
+                <div class="glass-card p-5 border-zinc-900 bg-zinc-900/20 flex items-center justify-between">
+                    <div class="space-y-2">
+                        <span class="text-[8px] font-black px-2 py-1 rounded bg-white text-black uppercase tracking-tighter">${d.car}</span>
+                        <h4 class="font-bold text-xs tracking-tight uppercase">${d.mat}</h4>
+                        <div class="flex items-center gap-3 text-zinc-500 text-[10px] font-bold">
+                            <span><i class="far fa-clock mr-1"></i> ${d.hor} HS</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <span class="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-1">Aula</span>
+                        <span class="text-2xl font-black">${d.aul}</span>
+                    </div>
+                </div>
+            `).join('') : `
+                <div class="text-center py-20 opacity-20">
+                    <i class="fas fa-ghost text-4xl mb-4"></i>
+                    <p class="text-[10px] font-black uppercase tracking-[0.3em]">Vacio</p>
+                </div>
+            `;
+        }
+
+        document.getElementById('searchInput').addEventListener('input', renderAulas);
+        showTab('home');
+    </script>
+</body>
+</html>
