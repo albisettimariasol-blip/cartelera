@@ -1,0 +1,36 @@
+"use client";
+import { useEffect, useState } from 'react';
+import GrillaAulas from '@/components/GrillaAulas';
+
+export default function Home() {
+  const [datos, setDatos] = useState({ aulas: [], novedades: [] });
+
+  useEffect(() => {
+    fetch('/api/sheets')
+      .then(res => res.json())
+      .then(data => setDatos(data));
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-slate-50">
+      <header className="bg-blue-900 text-white p-6 text-center">
+        <h1 className="text-2xl font-bold">ISFD 19</h1>
+        <p className="text-sm opacity-80">Cartelera Digital Automática</p>
+      </header>
+
+      <section className="p-4">
+        <h2 className="font-bold mb-2 text-slate-700">ÚLTIMAS NOVEDADES</h2>
+        <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl">
+          {datos.novedades.map((n, i) => (
+            <p key={i} className="text-sm mb-1">📢 <b>{n[0]}:</b> {n[1]}</p>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-bold px-4 text-slate-700">DISTRIBUCIÓN DE AULAS</h2>
+        <GrillaAulas datos={datos.aulas} />
+      </section>
+    </main>
+  );
+}
