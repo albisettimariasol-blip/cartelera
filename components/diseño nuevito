@@ -1,0 +1,40 @@
+// components/DashboardAulas.tsx
+export default function DashboardAulas({ aulas }) {
+  return (
+    <div className="bg-gray-50 min-h-screen p-4">
+      {/* Indicador de Turno Automático */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-black text-blue-900">ISFD 19</h1>
+        <span className="px-3 py-1 bg-green-500 text-white text-xs rounded-full animate-pulse">
+          Sincronizado con Sheets
+        </span>
+      </div>
+
+      {/* Grilla de Tarjetas */}
+      <div className="grid grid-cols-1 gap-3">
+        {aulas.map((aula, index) => (
+          <div key={index} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-700 font-bold">
+                {aula[0] === '11' ? 'MC' : aula[0]} {/* 'MC' para Microcine */}
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800">{aula[1] || 'Aula Libre'}</h3>
+                <p className="text-xs text-gray-500 uppercase tracking-widest">
+                  {aula[2] || 'Sin actividad'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Etiqueta de Alerta de Infraestructura */}
+            {aula[4] === 'SI' && (
+              <div className="bg-red-100 p-2 rounded-lg text-red-600">
+                <span className="text-[10px] font-bold">REVISAR ENCHUFES</span>[cite: 2]
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
